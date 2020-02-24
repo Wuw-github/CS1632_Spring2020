@@ -9,6 +9,12 @@ enum Item {
 
 public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 
+	Player p;
+	boolean room_exists = false;
+	ArrayList<Room> allRooms = new ArrayList<Room>();
+	int currentRoom = -1;
+	boolean gameOver;
+	
 	CoffeeMakerQuestImpl() {
 		// TODO
 	}
@@ -20,7 +26,15 @@ public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 	 */
 	public boolean isGameOver() {
 		// TODO
+		if(gameOver)
+		{
+
+			return true;
+
+		}
+
 		return false;
+		
 	}
 
 	/**
@@ -30,6 +44,7 @@ public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 	 */
 	public void setPlayer(Player p) {
 		// TODO
+		this.p = p;
 	}
 	
 	/**
@@ -41,7 +56,20 @@ public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 	 */
 	public boolean addFirstRoom(Room room) {
 		// TODO
-		return false;
+		if(room_exists)
+		{
+
+			return false;
+
+		}
+		else
+		{
+
+			allRooms.add(room);
+			room_exists = true;
+			return true;
+
+		}
 	}
 
 	/**
@@ -59,7 +87,30 @@ public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 	 */
 	public boolean addRoomAtNorth(Room room, String northDoor, String southDoor) {
 		// TODO
-		return false;
+		if(room == null || northDoor == null || southDoor == null)
+			return false;
+		int room_num = allRooms.size();
+		//System.out.println("room size is "+room_num);
+		if(room_num == 0) return false;
+		Room northern = allRooms.get(room_num-1);
+		assert(northern!=null);
+		//if the room is not unique, return false
+		if(!check_unique(room, room_num))
+			return false;
+		//add room here
+		allRooms.add(room);
+		//System.out.println("the name is "+northDoor);
+		northern.setNorthDoor(northDoor);
+		room.setSouthDoor(southDoor);
+		return true;
+	}
+	private boolean check_unique(Room room, int room_num){
+		for(int i=0; i < room_num; i++){
+			Room cur = allRooms.get(i);
+			if(cur.getAdjective().equals(room.getAdjective()) || cur.getFurnishing().equals(room.getFurnishing()))
+				return false;
+		}
+		return true;
 	}
 
 	/**
@@ -70,7 +121,18 @@ public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 	 */ 
 	public Room getCurrentRoom() {
 		// TODO
-		return null;
+		if(currentRoom == -1)
+		{
+
+			return null;
+
+		}
+		else
+		{
+
+			return allRooms.get(currentRoom);
+
+		}
 	}
 	
 	/**
@@ -82,7 +144,33 @@ public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 	 */
 	public boolean setCurrentRoom(Room room) {
 		// TODO
-		return false;
+		int temp = -1;
+
+		for(int i = 0; i < allRooms.size(); i++)
+		{
+
+			if(room.getFurnishing().equals(allRooms.get(i).getFurnishing()) && room.getAdjective().equals(allRooms.get(i).getAdjective()))
+			{
+
+				temp = i;
+
+			}
+
+		}
+
+		if(temp == -1)
+		{
+
+			return false;
+
+		}
+		else
+		{
+
+			currentRoom = temp;
+			return true;
+
+		}
 	}
 	
 	/**
@@ -93,7 +181,7 @@ public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 	 */
 	public String getInstructionsString() {
 		// TODO
-		return "";
+		return " INSTRUCTIONS (N,S,L,I,D,H) > ";
 	}
 	
 	/**
@@ -110,6 +198,149 @@ public class CoffeeMakerQuestImpl implements CoffeeMakerQuest {
 	 */
 	public String processCommand(String cmd) {
 		// TODO
+			String command = cmd.toUpperCase();
+
+			if(command.equals("N"))
+			{
+
+				if(currentRoom == (allRooms.size() -1))
+				{
+
+					return "A door in that direction does not exist.\n";
+
+				}
+
+				currentRoom++;
+				return "";
+
+			}
+			else
+			{
+
+				if(command.equals("S"))
+				{
+
+					if(currentRoom == 0)
+					{
+
+						return "A door in that direction does not exist.\n";
+
+					}
+
+					currentRoom--;
+					return "";
+
+				}
+				else
+				{
+
+					if(command.equals("L"))
+					{
+
+						if(allRooms.get(currentRoom).getItem() == Item.NONE)
+						{
+
+							return "You don't see anything out of the ordinary.\n";
+
+						}
+						else
+						{
+
+							if(allRooms.get(currentRoom).getItem() == Item.CREAM)
+							{
+								p.addItem(Item.CREAM);
+								return "There might be something here...\nYou found some creamy cream!\n";
+							}
+							else
+							{
+
+								if(allRooms.get(currentRoom).getItem() == Item.SUGAR)
+								{
+									p.addItem(Item.SUGAR);
+									return "There might be something here...\nYou found some sweet sugar!\n";
+
+								}
+								else
+								{
+									p.addItem(Item.COFFEE);
+									return "There might be something here...\nYou found some caffeinated coffee!\n";
+
+								}
+
+							}
+
+						}
+
+					}
+					else
+					{
+
+						if(command.equals("I"))
+						{
+
+							return p.getInventoryString();
+
+						}
+						else
+						{
+
+							if(command.equals("D"))
+							{
+
+								gameOver = true;
+								
+								if(p.checkCoffee() && p.checkCream() && p.checkSugar())
+
+									return "\nYou drink the beverage and are ready to study!\nYou win!\n";
+								
+								else if(p.checkCoffee() && p.checkCream() && !p.checkSugar())
+									
+									return p.getInventoryString()+ "\nWithout sugar, the coffee is too bitter. You cannot study.\nYou lose!\n";
+								
+								else if(p.checkCoffee() && !p.checkCream() && p.checkSugar())
+								
+									return p.getInventoryString() + "\nWithout cream, you get an ulcer and cannot study.\nYou lose!\n";
+								
+								else if(!p.checkCoffee() && p.checkCream() && p.checkSugar())
+								
+									return p.getInventoryString() + "\nYou drink the sweetened cream, but without caffeine you cannot study.\nYou lose!\n";
+								
+								else if(!p.checkCoffee() && !p.checkCream() && p.checkSugar())
+
+									return p.getInventoryString() + "\nYou eat the sugar, but without caffeine, you cannot study.\nYou lose!\n";
+								
+								else if(!p.checkCoffee() && p.checkCream() && !p.checkSugar())
+								
+									return p.getInventoryString() + "\nYou drink the cream, but without caffeine, you cannot study.\nYou lose!\n";
+								
+								else if(p.checkCoffee() && !p.checkCream() && !p.checkSugar())
+
+									return p.getInventoryString() + "\nWithout cream, you get an ulcer and cannot study.\nYou lose!\n";
+
+								else
+									return "\nYou drink the air, as you have no coffee, sugar, or cream.\nThe air is invigorating, but not invigorating enough. You cannot study.\nYou lose!\n";
+
+							}
+							else
+							{
+
+								if(command.equals("H"))
+								{
+
+									return "N - Go north\nS - Go south\nL - Look and collect any items in the room\nI - Show inventory of items collected\nD - Drink coffee made from items in inventory\n";
+
+								}
+
+							}
+
+						}
+
+					}
+
+				}
+
+			}
+
 		return "";
 	}
 	
